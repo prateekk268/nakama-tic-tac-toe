@@ -1,0 +1,23 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nakama TypeScript runtime for a server-authoritative tic-tac-toe game.",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:watch": "tsc -p tsconfig.json --watch --preserveWatchOutput",
+    "compose:down": "docker compose down",
+    "compose:logs": "docker compose logs -f nakama postgres",
+    "compose:up": "docker compose up --build",
+    "compose:up:detached": "docker compose up -d --build",
+    "compose:watch": "docker compose up --build --watch",
+    "dev": "./scripts/dev.sh",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "nakama-runtime": "github:heroiclabs/nakama-common#v1.31.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

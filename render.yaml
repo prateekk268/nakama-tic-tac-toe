@@ -1,0 +1,53 @@
+services:
+  - type: web
+    name: games-backend
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerCommand: /nakama/render-start.sh
+    autoDeployTrigger: commit
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: games-postgres
+          property: connectionString
+      - key: NAKAMA_SERVER_KEY
+        sync: false
+      - key: RUNTIME_HTTP_KEY
+        generateValue: true
+      - key: SESSION_ENCRYPTION_KEY
+        generateValue: true
+      - key: SESSION_REFRESH_ENCRYPTION_KEY
+        generateValue: true
+      - key: CONSOLE_USERNAME
+        value: admin@nakama.local
+      - key: CONSOLE_PASSWORD
+        generateValue: true
+
+  - type: web
+    name: games-client
+    runtime: static
+    rootDir: client
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: "22.12.0"
+      - key: VITE_NAKAMA_HOST
+        sync: false
+      - key: VITE_NAKAMA_PORT
+        value: "443"
+      - key: VITE_NAKAMA_SSL
+        value: "true"
+      - key: VITE_NAKAMA_SERVER_KEY
+        sync: false
+
+databases:
+  - name: games-postgres
+    plan: free
+    region: singapore
+    databaseName: nakama
+    postgresMajorVersion: "16"

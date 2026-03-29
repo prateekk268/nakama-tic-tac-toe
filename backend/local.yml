@@ -1,0 +1,21 @@
+name: nakama1
+database:
+  address:
+    - "postgres:localdb@postgres:5432/nakama"
+
+console:
+  port: 7351
+  username: admin@nakama.local
+  password: password123
+
+runtime:
+  js_entrypoint: "build/index.js"
+
+session:
+  token_expiry_sec: 7200
+
+socket:
+  port: 7350
+
+match:
+  input_queue_size: 128

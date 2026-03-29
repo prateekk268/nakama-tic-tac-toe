@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": ["es5", "es2015.collection", "es2015.core"],
+    "module": "none",
+    "strict": true,
+    "skipLibCheck": true,
+    "outFile": "build/index.js",
+    "typeRoots": ["./node_modules"],
+    "types": ["nakama-runtime"]
+  },
+  "files": ["src/main.ts"]
+}
