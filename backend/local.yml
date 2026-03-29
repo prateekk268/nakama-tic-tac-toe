@@ -17,9 +17,9 @@ session:
 socket:
   port: 7350
   response_headers:
-    Access-Control-Allow-Origin: "*"
-    Access-Control-Allow-Headers: "Authorization, Content-Type, User-Agent, X-Requested-With"
-    Access-Control-Allow-Methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    - "Access-Control-Allow-Origin=*"
+    - "Access-Control-Allow-Headers=Authorization, Content-Type, User-Agent, X-Requested-With"
+    - "Access-Control-Allow-Methods=GET, POST, PUT, PATCH, DELETE, OPTIONS"
 
 match:
   input_queue_size: 128
