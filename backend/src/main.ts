@@ -585,14 +585,25 @@ function matchLoop(
   messages: nkruntime.MatchMessage[],
 ) {
   state.currentTick = tick;
+  let moveApplied = false;
+
+  for (let i = 0; i < messages.length; i += 1) {
+    moveApplied =
+      processMatchMessage(ctx, logger, nk, dispatcher, state, messages[i]) ||
+      moveApplied;
+  }
+
+  expireDisconnects(ctx, logger, nk, dispatcher, tick, state);
 
   if (
     state.status === "active" &&
     playerCount(state) === 2 &&
-    state.mode === "timed"
+    state.mode === "timed" &&
+    !moveApplied &&
+    !isTurnPausedForReconnect(state)
   ) {
     state.timer = Math.max(0, state.timer - 1);
-    state.timers[state.turn] = state.timer;
+    syncTurnTimerSnapshot(state);
 
     if (state.timer <= 0) {
       const loserSymbol = state.turn;
@@ -609,12 +620,6 @@ function matchLoop(
       );
     }
   }
-
-  for (let i = 0; i < messages.length; i += 1) {
-    processMatchMessage(ctx, logger, nk, dispatcher, state, messages[i]);
-  }
-
-  expireDisconnects(ctx, logger, nk, dispatcher, tick, state);
 
   if (state.status === "active" && playerCount(state) === 2) {
     broadcastState(dispatcher, state);
@@ -661,14 +666,14 @@ function processMatchMessage(
   dispatcher: nkruntime.MatchDispatcher,
   state: MatchState,
   message: nkruntime.MatchMessage,
-): void {
+): boolean {
   if (message.opCode !== MOVE_OPCODE) {
-    return;
+    return false;
   }
 
   if (state.status !== "active") {
     sendValidationError(dispatcher, message.sender, "Match already finished.");
-    return;
+    return false;
   }
 
   const symbol = getSymbolForUser(state, message.sender.userId);
@@ -678,17 +683,17 @@ function processMatchMessage(
       message.sender,
       "You are not a participant in this match.",
     );
-    return;
+    return false;
   }
 
   if (playerCount(state) < 2) {
     sendValidationError(dispatcher, message.sender, "Waiting for an opponent.");
-    return;
+    return false;
   }
 
   if (symbol !== state.turn) {
     sendValidationError(dispatcher, message.sender, "It is not your turn.");
-    return;
+    return false;
   }
 
   const payload = parseMatchData(message.data);
@@ -696,12 +701,12 @@ function processMatchMessage(
 
   if (index < 0 || index >= BOARD_SIZE) {
     sendValidationError(dispatcher, message.sender, "Move out of bounds.");
-    return;
+    return false;
   }
 
   if (state.board[index] !== null) {
     sendValidationError(dispatcher, message.sender, "Cell already occupied.");
-    return;
+    return false;
   }
 
   state.board[index] = symbol;
@@ -717,7 +722,7 @@ function processMatchMessage(
       symbol,
       "Winning move.",
     );
-    return;
+    return true;
   }
 
   if (isBoardFull(state.board)) {
@@ -731,12 +736,12 @@ function processMatchMessage(
       null,
       "Board full.",
     );
-    return;
+    return true;
   }
 
   state.turn = otherSymbol(symbol);
-  state.timer = state.timers[state.turn];
-  broadcastState(dispatcher, state);
+  resetTurnTimer(state);
+  return true;
 }
 
 function expireDisconnects(
@@ -1151,6 +1156,23 @@ function isBoardFull(board: BoardCell[]): boolean {
 
 function otherSymbol(symbol: PlayerSymbol): PlayerSymbol {
   return symbol === "X" ? "O" : "X";
+}
+
+function resetTurnTimer(state: MatchState): void {
+  state.timer = TURN_SECONDS;
+  state.timers.X = TURN_SECONDS;
+  state.timers.O = TURN_SECONDS;
+}
+
+function syncTurnTimerSnapshot(state: MatchState): void {
+  state.timers.X = TURN_SECONDS;
+  state.timers.O = TURN_SECONDS;
+  state.timers[state.turn] = state.timer;
+}
+
+function isTurnPausedForReconnect(state: MatchState): boolean {
+  const activePlayer = state.players[state.turn];
+  return Boolean(activePlayer && state.disconnects[activePlayer.userId]);
 }
 
 function defaultStats(): PlayerStats {

@@ -495,6 +495,10 @@
   align-content: start;
 }
 
+.timer-card-paused .timer-ring-progress {
+  stroke: #ffca6a;
+}
+
 .timer-ring {
   position: relative;
   width: 140px;

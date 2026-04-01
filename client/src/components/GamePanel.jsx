@@ -131,6 +131,11 @@ export function GamePanel({
   const board = gameState?.board ?? Array.from({ length: 9 }, () => null)
   const roomCode = gameState?.roomCode ?? activeMatch?.roomCode ?? '------'
   const outcome = resolveOutcome(gameState, localPlayerSymbol)
+  const currentTurn = gameState?.turn ?? 'X'
+  const activeTurnPlayer = gameState?.players?.[currentTurn]
+  const activeTurnDisconnect = activeTurnPlayer?.userId
+    ? gameState?.disconnects?.[activeTurnPlayer.userId] ?? null
+    : null
   const outcomeKey = [
     activeMatch?.matchId ?? '',
     gameState?.status ?? '',
@@ -210,8 +215,11 @@ export function GamePanel({
 
           <TurnTimer
             mode={gameState?.mode ?? activeMatch?.mode ?? 'classic'}
+            graceSecondsRemaining={activeTurnDisconnect?.secondsRemaining ?? 0}
+            paused={Boolean(activeTurnDisconnect)}
+            pausedUsername={activeTurnDisconnect?.username ?? activeTurnPlayer?.username ?? currentTurn}
             timer={gameState?.timer ?? 30}
-            turn={gameState?.turn ?? 'X'}
+            turn={currentTurn}
           />
 
           <div className="timeline-card">
